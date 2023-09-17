@@ -45,7 +45,6 @@ class f_sequence extends uvm_sequence#(f_sequence_item);
       finish_item(req);
     end
   endtask
-  
 endclass
   
   
