@@ -15,7 +15,7 @@ class f_driver extends uvm_driver#(f_sequence_item);
 
   virtual task run_phase(uvm_phase phase);
     forever begin
-      if(!rstn) begin
+      if(vif.rstn==0) begin
     vif.d_mp.d_cb.wr <= 'b0;
     vif.d_mp.d_cb.rd <= 'b0;
     vif.d_mp.d_cb.data_in <= 'b0;
