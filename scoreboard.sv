@@ -19,7 +19,7 @@ class f_scoreboard extends uvm_scoreboard;
       queue.push_back(item_got.i_wrdata);
       `uvm_info("write Data", $sformatf("i_wren: %0b i_rden: %0b i_wrdata: %0d o_full: %0b,o_alm_full: %0b",item_got.i_wren, item_got.i_rden,item_got.i_wrdata, item_got.o_full,item_got.o_alm_full), UVM_LOW);
     end
-    if (item_got.rd == 'b1)begin
+    if (item_got.i_rden == 'b1)begin
       if(queue.size() >= 'd1)begin
         examdata = queue.pop_front();
         `uvm_info("Read Data", $sformatf("examdata: %0d o_rddata: %0d o_empty: %0b,o_alm_empty: %0b", examdata, item_got.o_rddata, item_got.o_empty,item_got.o_alm_empty), UVM_LOW);
