@@ -14,19 +14,19 @@ interface f_interface(input clk, rstn);
   bit [127:0] o_rddata;
   
   clocking d_cb @(posedge clk);
-    default input #1 output #0;
+    default input #1 output #1;
     output i_wren;
     output i_rden;
     output i_wrdata;
-//     input o_full;
-//     input o_empty;
-//     input o_alm_full;
-//     input o_alm_empty;
-//     input o_rddata;
+    input o_full;
+    input o_empty;
+    input o_alm_full;
+    input o_alm_empty;
+    input o_rddata;
   endclocking
   
   clocking m_cb @(posedge clk);
-    default input #1 output #0;
+    default input #1 output #1;
     input i_wren;
     input i_rden;
     input i_wrdata;
@@ -89,42 +89,51 @@ class f_sequence extends uvm_sequence #(f_sequence_item);
   endfunction
   
   virtual task body();
-//     `uvm_info(get_type_name(), $sformatf("******** Idle condition ********"), UVM_LOW);
-//     repeat(15) begin
-//       req = f_sequence_item::type_id::create("req");
-//       start_item(req);
-//       assert(req.randomize() with {i_rden==0;i_wren==0;});
-//       finish_item(req);
-//       end
+    `uvm_info(get_type_name(), $sformatf("******** Idle condition ********"), UVM_LOW);
+    repeat(20) begin
+      $display("IDLE");
+      req = f_sequence_item::type_id::create("req");
+      start_item(req);
+      assert(req.randomize() with {i_rden==0;i_wren==0;});
+      finish_item(req);
+      end
+    
       `uvm_info(get_type_name(), $sformatf("********Continuous writes ********"), UVM_LOW);
-    repeat(15) begin
+    repeat(20) begin
+      $display("CONTINUOUS WRITES");
       req = f_sequence_item::type_id::create("req");
       start_item(req);
       assert(req.randomize() with {i_rden==0;i_wren==1;});
       finish_item(req);
     end
+    
       `uvm_info(get_type_name(), $sformatf("******** Continuous reads ********"), UVM_LOW);
-    repeat(15) begin
+    repeat(20) begin
+      $display("CONTINUOUS READS");
       req = f_sequence_item::type_id::create("req");
       start_item(req);
       assert(req.randomize() with {i_rden==1;i_wren==0;});
       finish_item(req);
     end
+    
       `uvm_info(get_type_name(), $sformatf("******** Parallel write and read ********"), UVM_LOW);
-    repeat(15) begin
+    repeat(20) begin
+      $display("PARALLEL WRITE AND READ");
       req = f_sequence_item::type_id::create("req");
       start_item(req);
       assert(req.randomize() with  {i_rden==1;i_wren==1;});
       finish_item(req);
     end
+    
       `uvm_info(get_type_name(), $sformatf("******** Alternate write and read ********"), UVM_LOW);
-    repeat(15) begin
+    repeat(20) begin
+      $display("ALTERNATE WRITE AND READ");
       req = f_sequence_item::type_id::create("req");
       start_item(req);
       assert(req.randomize() with {i_rden==0;i_wren==1;});
       finish_item(req);
       
-     // req = f_sequence_item::type_id::create("req");
+      req = f_sequence_item::type_id::create("req");
       start_item(req);
       assert(req.randomize() with {i_rden==1;i_wren==0;});
       finish_item(req);
@@ -163,6 +172,9 @@ class f_driver extends uvm_driver#(f_sequence_item);
   endfunction
 
   virtual task run_phase(uvm_phase phase);
+//      vif.d_mp.d_cb.i_wren <= 'b0;
+//     vif.d_mp.d_cb.i_rden <= 'b0;
+//     vif.d_mp.d_cb.i_wrdata <= 'b0;
     forever begin
       
       if(vif.d_mp.rstn==0) begin
@@ -223,7 +235,7 @@ class f_monitor extends uvm_monitor;
     forever begin
       @(posedge vif.m_mp.clk)
       if(vif.m_mp.m_cb.i_wren == 1)begin
-        $display("\n WRITE is high");
+       // $display("\n WRITE is high");
         item_got.i_wrdata = vif.m_mp.m_cb.i_wrdata;
         item_got.i_wren = 'b1;
         item_got.i_rden = 'b0;
@@ -233,8 +245,8 @@ class f_monitor extends uvm_monitor;
       end
       
       if(vif.m_mp.m_cb.i_rden == 1)begin
-        @(posedge vif.m_mp.clk)
-        $display("\n READ is high");
+        //@(posedge vif.m_mp.clk)
+        //$display("\n READ is high");
         item_got.o_rddata = vif.m_mp.m_cb.o_rddata;
         item_got.i_rden = 'b1;
         item_got.i_wren = 'b0;
@@ -307,12 +319,12 @@ class f_scoreboard extends uvm_scoreboard;
     bit [127:0] examdata;
     if(item_got.i_wren == 'b1)begin
       queue.push_back(item_got.i_wrdata);
-      `uvm_info("write Data", $sformatf("i_wren: %0b i_rden: %0b i_wrdata: %0d o_full: %0b,o_alm_full: %0b",item_got.i_wren, item_got.i_rden,item_got.i_wrdata, item_got.o_full,item_got.o_alm_full), UVM_LOW);
+      `uvm_info("write Data", $sformatf("i_wren: %0b i_rden: %0b i_wrdata: %0d o_full: %0b,o_alm_full: %0b,o_empty: %0b,o_alm_empty: %0b",item_got.i_wren, item_got.i_rden,item_got.i_wrdata, item_got.o_full,item_got.o_alm_full,item_got.o_empty,item_got.o_alm_empty), UVM_LOW);
     end
     if (item_got.i_rden == 'b1)begin
       if(queue.size() >= 'd1)begin
         examdata = queue.pop_front();
-        `uvm_info("Read Data", $sformatf("examdata: %0d o_rddata: %0d o_empty: %0b,o_alm_empty: %0b, item_got read data = %0d", examdata, item_got.o_rddata, item_got.o_empty,item_got.o_alm_empty,item_got.o_rddata), UVM_LOW);
+        `uvm_info("Read Data", $sformatf("examdata: %0d o_rddata: %0d o_empty: %0b,o_alm_empty: %0b, item_got read data = %0d,o_full: %0b,o_alm_full: %0b", examdata, item_got.o_rddata, item_got.o_empty,item_got.o_alm_empty,item_got.o_rddata,item_got.o_full,item_got.o_alm_full), UVM_LOW);
         if(examdata == item_got.o_rddata)begin
           $display("-------- 		Pass! 		--------");
         end
@@ -403,7 +415,7 @@ module tb;
   
   f_interface tif(clk, rstn);
   
-  SYN_FIFO dut(.clk(tif.clk),
+  my_fifo dut(.clk(tif.clk),
                .rstn(tif.rstn),
                .i_wrdata(tif.i_wrdata),
                .i_wren(tif.i_wren),
